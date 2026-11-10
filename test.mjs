@@ -1,0 +1,7 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {naverUrl,extractHtml,demoStoryboard,escapeXml} from './lib.mjs';
+test('Naver post formats normalize to the mobile host',()=>{assert.equal(naverUrl('https://blog.naver.com/user_1/12345'),'https://m.blog.naver.com/user_1/12345');assert.equal(naverUrl('https://blog.naver.com/PostView.naver?blogId=test&logNo=123'),'https://m.blog.naver.com/test/123');});
+test('reject private networks, deceptive hosts and non-post URLs',()=>{for(const url of ['http://127.0.0.1/','https://blog.naver.com.evil.test/a/1','https://blog.naver.com:4430/a/1','https://x@blog.naver.com/a/1','https://blog.naver.com/a'])assert.throws(()=>naverUrl(url));});
+test('extract only post body, excluding scripts',()=>{const text='블로그의 공개된 본문입니다. 충분한 길이의 원문만 영상 제작에 사용합니다. 다른 영역의 광고는 포함하지 않습니다.';const result=extractHtml(`<title>테스트</title><nav>광고</nav><div class="se-main-container"><p>${text}</p><script>secret</script></div>`);assert.equal(result.text,text);assert.equal(result.title,'테스트');});
+test('empty or private posts report a useful error',()=>assert.throws(()=>extractHtml('<html>비공개</html>')));
+test('demo retains original sentences and escapes XML',()=>{const b=demoStoryboard('오늘은 새로운 작은 습관을 시작합니다. 내일도 그 작은 습관을 꾸준히 이어갑니다.','습관');assert.equal(b.scenes.length,2);assert.ok(b.scenes[0].narration.includes('오늘은'));assert.equal(escapeXml('<script>'),'&lt;script&gt;');});
